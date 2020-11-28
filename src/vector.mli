@@ -10,10 +10,10 @@ val z : vec3 -> float
 
 val negate : vec3 -> vec3
 
-val ( +$ ) : vec3 -> vec3 -> vec3
-val ( -$ ) : vec3 -> vec3 -> vec3
-val ( *$ ) : vec3 -> float -> vec3
-val ( /$ ) : vec3 -> float -> vec3
+val ( +: ) : vec3 -> vec3 -> vec3
+val ( -: ) : vec3 -> vec3 -> vec3
+val ( *: ) : vec3 -> float -> vec3
+val ( /: ) : vec3 -> float -> vec3
 
 val dot : vec3 -> vec3 -> float
 

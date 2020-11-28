@@ -15,5 +15,5 @@ let direction r =
   r.dir
 
 let at r t =
-  r.orig +$ (r.dir *$ t)
+  r.orig +: (r.dir *: t)
 

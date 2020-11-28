@@ -4,7 +4,7 @@ let kWindowWidth = 640
 let kWindowHeight = 360
 
 let get_lower_left o h v focal =
-  ((o -$ (h /$ 2.)) -$ (v /$ 2.)) -$ (make 0. 0. focal)
+  ((o -: (h /: 2.)) -: (v /: 2.)) -: (make 0. 0. focal)
 
 let draw_scene () =
   (* TODO: Calc from width/height *)

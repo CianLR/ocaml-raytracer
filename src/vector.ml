@@ -18,16 +18,16 @@ let z v = v.z
 let negate v =
   make (-.v.x) (-.v.y) (-.v.z)
 
-let ( +$ ) v1 v2 =
+let ( +: ) v1 v2 =
   make (v1.x +. v2.x) (v1.y +. v2.y) (v1.z +. v2.z)
 
-let ( -$ ) v1 v2 =
-  v1 +$ (negate v2)
+let ( -: ) v1 v2 =
+  v1 +: (negate v2)
 
-let ( *$ ) v t =
+let ( *: ) v t =
   make (v.x *. t) (v.y *. t) (v.z *. t)
 
-let ( /$ ) v t =
+let ( /: ) v t =
   make (v.x /. t) (v.y /. t) (v.z /. t)
 
 let dot v1 v2 =
