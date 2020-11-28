@@ -19,3 +19,6 @@ val dot : vec3 -> vec3 -> float
 
 val length_squared : vec3 -> float
 val length : vec3 -> float
+
+val unit_vector : vec3 -> vec3
+

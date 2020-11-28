@@ -7,4 +7,3 @@ val origin : ray -> Vector.vec3
 val direction : ray -> Vector.vec3
 
 val at : ray -> float -> Vector.vec3
-

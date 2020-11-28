@@ -39,4 +39,6 @@ let length_squared v =
 let length v =
   Float.sqrt (length_squared v)
 
+let unit_vector v =
+  v /: (length v)
 
