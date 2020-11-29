@@ -17,19 +17,24 @@ let vec_to_rgb v =
     (int_of_float (255. *. (y v)))
     (int_of_float (255. *. (z v)))
 
-let ray_color r =
+let get_scene_objects () =
   let sphere_center = Vector.make 0. 0. (-1.) in
   let sphere = new Sphere.sphere sphere_center 0.5 in
-  let sphere_hit = sphere#hit r in
-  if sphere_hit > 0. then
+  [sphere]
+
+let ray_color r =
+  let sphere_center = Vector.make 0. 0. (-1.) in
+  let scene_list = get_scene_objects () in
+  match Raytrace.hit_list r 0.0 Float.infinity scene_list with
+  | Some sphere_hit ->
     let normal = unit_vector ((at r sphere_hit) -: sphere_center) in
     (normal +: (Vector.make 1. 1. 1.)) *: 0.5
     |> vec_to_rgb
-  else
-  let unit_direction = unit_vector (direction r) in
-  let t = 0.5 *. (1.0 +. y unit_direction) in
-  lerp (Vector.make 1. 1. 1.) (Vector.make 1. 0. 0.) t
-  |> vec_to_rgb
+  | None ->
+    let unit_direction = unit_vector (direction r) in
+    let t = 0.5 *. (1.0 +. y unit_direction) in
+    lerp (Vector.make 1. 1. 1.) (Vector.make 1. 0. 0.) t
+    |> vec_to_rgb
 
 let draw_scene () =
   (* TODO: Calc from width/height *)
