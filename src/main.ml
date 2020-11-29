@@ -1,16 +1,9 @@
 open Vector
 open Ray
 
-let kWindowWidth = 640
-let kWindowHeight = 360
-
-let hit_sphere cen rad r =
-  let oc = (origin r) -: cen in
-  let a = dot (direction r) (direction r) in
-  let b = 2. *. (dot oc (direction r)) in
-  let c = (dot oc oc) -. (rad *. rad) in
-  let descrim = (b *. b) -. (4. *. a *. c) in
-  descrim > 0.
+let kScale = 1
+let kWindowWidth = 640 * kScale
+let kWindowHeight = 360 * kScale
 
 let get_lower_left o h v focal =
   ((o -: (h /: 2.)) -: (v /: 2.)) -: (Vector.make 0. 0. focal)
@@ -25,8 +18,13 @@ let vec_to_rgb v =
     (int_of_float (255. *. (z v)))
 
 let ray_color r =
-  if hit_sphere (Vector.make 0. 0. (-1.)) 0.5 r then
-    Vector.make 0. 1. 0. |> vec_to_rgb
+  let sphere_center = Vector.make 0. 0. (-1.) in
+  let sphere = new Sphere.sphere sphere_center 0.5 in
+  let sphere_hit = sphere#hit r in
+  if sphere_hit > 0. then
+    let normal = unit_vector ((at r sphere_hit) -: sphere_center) in
+    (normal +: (Vector.make 1. 1. 1.)) *: 0.5
+    |> vec_to_rgb
   else
   let unit_direction = unit_vector (direction r) in
   let t = 0.5 *. (1.0 +. y unit_direction) in
