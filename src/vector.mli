@@ -22,3 +22,5 @@ val length : vec3 -> float
 
 val unit_vector : vec3 -> vec3
 
+val print : vec3 -> unit
+

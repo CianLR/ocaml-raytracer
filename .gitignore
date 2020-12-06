@@ -1,3 +1,6 @@
+# vim
+*.swp
+
 *.annot
 *.cmo
 *.cma

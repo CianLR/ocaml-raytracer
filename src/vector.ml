@@ -42,3 +42,5 @@ let length v =
 let unit_vector v =
   v /: (length v)
 
+let print v =
+  Printf.printf "[%.4f %.4f %.4f]\n" v.x v.y v.z

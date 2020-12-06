@@ -1,7 +1,8 @@
 open Vector
 open Ray
+open Hit_record
 
-let kScale = 1
+let kScale = 2
 let kWindowWidth = 640 * kScale
 let kWindowHeight = 360 * kScale
 
@@ -18,40 +19,33 @@ let vec_to_rgb v =
     (int_of_float (255. *. (z v)))
 
 let get_scene_objects () =
-  let sphere_center = Vector.make 0. 0. (-1.) in
-  let sphere = new Sphere.sphere sphere_center 0.5 in
-  [sphere]
+  let main_sphere =
+    let center = Vector.make 0. 0. (-1.) in
+    new Sphere.sphere center 0.5 in
+  let _(*ground_sphere*) =
+    let center = Vector.make 0. (-100.5) (-1.) in
+    new Sphere.sphere center 100. in
+  [main_sphere(*; ground_sphere*)]
 
 let ray_color r =
-  let sphere_center = Vector.make 0. 0. (-1.) in
   let scene_list = get_scene_objects () in
   match Raytrace.hit_list r 0.0 Float.infinity scene_list with
-  | Some sphere_hit ->
-    let normal = unit_vector ((at r sphere_hit) -: sphere_center) in
-    (normal +: (Vector.make 1. 1. 1.)) *: 0.5
+  | Some record ->
+    ((normal record) +: (Vector.make 1. 1. 1.)) *: 0.5
     |> vec_to_rgb
   | None ->
     let unit_direction = unit_vector (direction r) in
     let t = 0.5 *. (1.0 +. y unit_direction) in
-    lerp (Vector.make 1. 1. 1.) (Vector.make 1. 0. 0.) t
+    lerp (Vector.make 1. 1. 1.) (Vector.make 0. 0. 0.) t
     |> vec_to_rgb
 
 let draw_scene () =
-  (* TODO: Calc from width/height *)
-  let aspect_ratio = 16.0 /. 9.0 in
-  let viewport_height = 2.0 in
-  let viewport_width = viewport_height *. aspect_ratio in
-  let focal_length = 1.0 in
-  let origin = Vector.make 0. 0. 0. in
-  let horizontal = Vector.make viewport_width 0. 0. in
-  let vertical = Vector.make 0. viewport_height 0. in
-  let llc = get_lower_left origin horizontal vertical focal_length in
+  let cam = Camera.make () in
   for y = 0 to kWindowHeight - 1 do
     for x = 0 to kWindowWidth - 1 do
       let u = (float_of_int x) /. (float_of_int (kWindowWidth - 1)) in
       let v = (float_of_int y) /. (float_of_int (kWindowHeight - 1)) in
-      let dir = (llc +: (horizontal *: u) +: (vertical *: v)) -: origin in
-      let ray = Ray.make origin dir in
+      let ray = Camera.get_ray cam u v in
       Graphics.set_color (ray_color ray);
       Graphics.plot x y
     done
@@ -60,7 +54,9 @@ let draw_scene () =
 let () =
   let graph_spec = Printf.sprintf " %dx%d" kWindowWidth kWindowHeight in
   Graphics.open_graph graph_spec;
+  Graphics.auto_synchronize false;
   draw_scene ();
-  ignore (Graphics.wait_next_event [Graphics.Key_pressed]);
-  print_newline ();
+  Graphics.synchronize ();
+  let status = Graphics.wait_next_event [Graphics.Key_pressed] in
+  Printf.printf "%d %d\n" status.mouse_x status.mouse_y
 
