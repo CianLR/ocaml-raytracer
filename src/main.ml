@@ -6,9 +6,6 @@ let kScale = 2
 let kWindowWidth = 640 * kScale
 let kWindowHeight = 360 * kScale
 
-let get_lower_left o h v focal =
-  ((o -: (h /: 2.)) -: (v /: 2.)) -: (Vector.make 0. 0. focal)
-
 let lerp c1 c2 t =
   (c1 *: (1. -. t)) +: (c2 *: t)
 
@@ -22,14 +19,13 @@ let get_scene_objects () =
   let main_sphere =
     let center = Vector.make 0. 0. (-1.) in
     new Sphere.sphere center 0.5 in
-  let _(*ground_sphere*) =
+  let ground_sphere =
     let center = Vector.make 0. (-100.5) (-1.) in
     new Sphere.sphere center 100. in
-  [main_sphere(*; ground_sphere*)]
+  [main_sphere; ground_sphere]
 
-let ray_color r =
-  let scene_list = get_scene_objects () in
-  match Raytrace.hit_list r 0.0 Float.infinity scene_list with
+let ray_color scene r =
+  match Raytrace.hit_list r 0.0 Float.infinity scene with
   | Some record ->
     ((normal record) +: (Vector.make 1. 1. 1.)) *: 0.5
     |> vec_to_rgb
@@ -41,12 +37,13 @@ let ray_color r =
 
 let draw_scene () =
   let cam = Camera.make () in
+  let scene = get_scene_objects () in
   for y = 0 to kWindowHeight - 1 do
     for x = 0 to kWindowWidth - 1 do
       let u = (float_of_int x) /. (float_of_int (kWindowWidth - 1)) in
       let v = (float_of_int y) /. (float_of_int (kWindowHeight - 1)) in
       let ray = Camera.get_ray cam u v in
-      Graphics.set_color (ray_color ray);
+      Graphics.set_color (ray_color scene ray);
       Graphics.plot x y
     done
   done
