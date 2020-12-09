@@ -1,6 +1,8 @@
 # ocaml-raytracer
 A Raytracing library in OCaml
 
+<img src="https://github.com/cianlr/ocaml-raytracer/raw/main/screenshot.png">
+
 ## Building
 To build the raytracer example program run
 ```
