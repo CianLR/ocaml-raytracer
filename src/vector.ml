@@ -42,5 +42,10 @@ let length v =
 let unit_vector v =
   v /: (length v)
 
+let random min max =
+  let width = max -. min in
+  let rand () = min +. Random.float width in
+  {x=rand (); y=rand (); z=rand ()}
+
 let print v =
   Printf.printf "[%.4f %.4f %.4f]\n" v.x v.y v.z

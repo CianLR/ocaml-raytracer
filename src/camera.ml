@@ -14,9 +14,8 @@ type camera  = {
 let get_lower_left o h v focal =
   ((o -: (h /: 2.)) -: (v /: 2.)) -: (Vector.make 0. 0. focal)
 
-let make () =
-  (* TODO: Calc from width/height *)
-  let aspect_ratio = 16.0 /. 9.0 in 
+let make height width =
+  let aspect_ratio = (float_of_int width) /. (float_of_int height) in 
   let viewport_height = 2.0 in
   let viewport_width = viewport_height *. aspect_ratio in
   let focal_length = 1.0 in

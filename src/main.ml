@@ -1,19 +1,20 @@
 open Vector
 open Ray
-open Hit_record
 
-let kScale = 2
+let kScale = 3
 let kWindowWidth = 640 * kScale
 let kWindowHeight = 360 * kScale
+let kSamplesPerPixel = 100
+let kMaxReflectionDepth = 25
 
 let lerp c1 c2 t =
   (c1 *: (1. -. t)) +: (c2 *: t)
 
 let vec_to_rgb v =
   Graphics.rgb
-    (int_of_float (255. *. (x v)))
-    (int_of_float (255. *. (y v)))
-    (int_of_float (255. *. (z v)))
+    (int_of_float (255. *. (Float.sqrt (x v))))
+    (int_of_float (255. *. (Float.sqrt (y v))))
+    (int_of_float (255. *. (Float.sqrt (z v))))
 
 let get_scene_objects () =
   let main_sphere =
@@ -24,26 +25,53 @@ let get_scene_objects () =
     new Sphere.sphere center 100. in
   [main_sphere; ground_sphere]
 
-let ray_color scene r =
+let rec random_in_unit_sphere () =
+  let v = Vector.random (-1.) 1. in
+  if (Vector.length_squared v) >= 1. then
+    v
+  else
+    random_in_unit_sphere ()
+
+let rec ray_color scene r depth =
+  if depth = 0 then Vector.make 0. 0. 0. else
   match Raytrace.hit_list r 0.0 Float.infinity scene with
   | Some record ->
-    ((normal record) +: (Vector.make 1. 1. 1.)) *: 0.5
-    |> vec_to_rgb
+    let hit = Hit_record.hit record in
+    let target =
+      hit +:
+      Hit_record.normal record +:
+      random_in_unit_sphere () in
+    let ray = Ray.make hit (target -: hit) in
+    (ray_color scene ray (depth - 1)) *: 0.5
   | None ->
     let unit_direction = unit_vector (direction r) in
     let t = 0.5 *. (1.0 +. y unit_direction) in
-    lerp (Vector.make 1. 1. 1.) (Vector.make 0. 0. 0.) t
-    |> vec_to_rgb
+    lerp (Vector.make 1. 1. 1.) (Vector.make 0.5 0.7 1.0) t
 
-let draw_scene () =
-  let cam = Camera.make () in
+let sample_pixel scene cam samples x y =
+  let fuzz_points () =
+    ((float_of_int x) +. Random.float 1.0,
+     (float_of_int y) +. Random.float 1.0) in
+  let scale_points (x, y) =
+    (x /. (float_of_int (kWindowWidth - 1)),
+     y /. (float_of_int (kWindowHeight - 1))) in
+  let points_to_color (u, v) =
+    ray_color scene (Camera.get_ray cam u v) kMaxReflectionDepth in
+  List.init samples (fun _ -> fuzz_points ())
+  |> List.map scale_points
+  |> List.map points_to_color
+  |> List.fold_left (+:) (Vector.make 0. 0. 0.)
+  |> fun v -> v /: (float_of_int samples)
+  |> vec_to_rgb
+
+let draw_scene ?(aa=true) () =
+  let samples = if aa then kSamplesPerPixel else 1 in
+  let cam = Camera.make kWindowHeight kWindowWidth in
   let scene = get_scene_objects () in
   for y = 0 to kWindowHeight - 1 do
     for x = 0 to kWindowWidth - 1 do
-      let u = (float_of_int x) /. (float_of_int (kWindowWidth - 1)) in
-      let v = (float_of_int y) /. (float_of_int (kWindowHeight - 1)) in
-      let ray = Camera.get_ray cam u v in
-      Graphics.set_color (ray_color scene ray);
+      let color = sample_pixel scene cam samples x y in
+      Graphics.set_color color;
       Graphics.plot x y
     done
   done
@@ -51,9 +79,12 @@ let draw_scene () =
 let () =
   let graph_spec = Printf.sprintf " %dx%d" kWindowWidth kWindowHeight in
   Graphics.open_graph graph_spec;
-  Graphics.auto_synchronize false;
+  Graphics.moveto (kWindowWidth / 2) (kWindowHeight / 2);
+  Graphics.set_font "-*-*-*-*-*-*-20-*-*-*-*-*-*-*";
+  Graphics.draw_string "Loading...";
+  (*Graphics.auto_synchronize false;*)
   draw_scene ();
-  Graphics.synchronize ();
+  (*Graphics.synchronize ();*)
   let status = Graphics.wait_next_event [Graphics.Key_pressed] in
   Printf.printf "%d %d\n" status.mouse_x status.mouse_y
 
