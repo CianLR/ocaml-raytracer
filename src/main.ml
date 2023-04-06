@@ -1,10 +1,12 @@
 open Vector
 open Ray
 
+module T = Domainslib.Task
+
 let kScale = 3
 let kWindowWidth = 640 * kScale
 let kWindowHeight = 360 * kScale
-let kSamplesPerPixel = 100
+let kSamplesPerPixel = 10
 let kMaxReflectionDepth = 25
 
 let lerp c1 c2 t =
@@ -50,8 +52,8 @@ let rec ray_color scene r depth =
 
 let sample_pixel scene cam samples x y =
   let fuzz_points () =
-    ((float_of_int x) +. Random.float 1.0,
-     (float_of_int y) +. Random.float 1.0) in
+    ((float_of_int x) +. ((Random.float 2.0) -. 1.0),
+     (float_of_int y) +. ((Random.float 2.0) -. 1.0)) in
   let scale_points (x, y) =
     (x /. (float_of_int (kWindowWidth - 1)),
      y /. (float_of_int (kWindowHeight - 1))) in
@@ -64,17 +66,25 @@ let sample_pixel scene cam samples x y =
   |> fun v -> v /: (float_of_int samples)
   |> vec_to_rgb
 
-let draw_scene ?(aa=true) () =
+let draw_scene pool pixels ?(aa=true) () =
   let samples = if aa then kSamplesPerPixel else 1 in
   let cam = Camera.make kWindowHeight kWindowWidth in
   let scene = get_scene_objects () in
-  for y = 0 to kWindowHeight - 1 do
-    for x = 0 to kWindowWidth - 1 do
-      let color = sample_pixel scene cam samples x y in
-      Graphics.set_color color;
-      Graphics.plot x y
-    done
-  done
+  let pixel_count = (kWindowHeight * kWindowWidth) in
+  T.parallel_for pool ~start:0 ~finish:(pixel_count - 1) ~body:(fun p ->
+    let x = p mod kWindowWidth in
+    let y = p / kWindowWidth in
+    let color = sample_pixel scene cam samples x y in
+    pixels.(p) <- color;
+  )
+
+let write_pixels =
+  Array.iteri (fun p color ->
+    let x = p mod kWindowWidth in
+    let y = p / kWindowWidth in
+    Graphics.set_color color;
+    Graphics.plot x y
+  )
 
 let () =
   let graph_spec = Printf.sprintf " %dx%d" kWindowWidth kWindowHeight in
@@ -82,9 +92,13 @@ let () =
   Graphics.moveto (kWindowWidth / 2) (kWindowHeight / 2);
   Graphics.set_font "-*-*-*-*-*-*-20-*-*-*-*-*-*-*";
   Graphics.draw_string "Loading...";
-  (*Graphics.auto_synchronize false;*)
-  draw_scene ();
-  (*Graphics.synchronize ();*)
+  let pool = T.setup_pool ~num_domains:4 () in
+  (* Graphics.auto_synchronize false; *)
+  let pixels = Array.make (kWindowHeight * kWindowWidth) 0 in
+  T.run pool (draw_scene pool pixels);
+  T.teardown_pool pool;
+  write_pixels pixels;
+  (* draw_scene (); *)
+  (* Graphics.synchronize (); *)
   let status = Graphics.wait_next_event [Graphics.Key_pressed] in
   Printf.printf "%d %d\n" status.mouse_x status.mouse_y
-

@@ -1,4 +1,4 @@
 (executables
   (names main)
-  (libraries graphics))
+  (libraries graphics domainslib))
 
