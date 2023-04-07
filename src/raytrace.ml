@@ -1,6 +1,9 @@
 
-let closest_hit h1 _ =
-  h1
+let closest_hit h1 h2 =
+  if Hit_record.t h1 < Hit_record.t h2 then
+    h1
+  else
+    h2
 
 let hit_list r t_min t_max l =
   let maybe_closest a b =

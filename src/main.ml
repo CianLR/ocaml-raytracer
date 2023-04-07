@@ -3,11 +3,11 @@ open Ray
 
 module T = Domainslib.Task
 
-let kScale = 3
+let kScale = 2
 let kWindowWidth = 640 * kScale
 let kWindowHeight = 360 * kScale
-let kSamplesPerPixel = 10
-let kMaxReflectionDepth = 25
+let kSamplesPerPixel = 50
+let kMaxReflectionDepth = 10
 
 let lerp c1 c2 t =
   (c1 *: (1. -. t)) +: (c2 *: t)
@@ -20,12 +20,15 @@ let vec_to_rgb v =
 
 let get_scene_objects () =
   let main_sphere =
-    let center = Vector.make 0. 0. (-1.) in
+    let center = Vector.make (-0.6) 0. (-1.2) in
+    new Sphere.sphere center 0.5 in
+  let back_sphere =
+    let center = Vector.make 2. 0. (-3.0) in
     new Sphere.sphere center 0.5 in
   let ground_sphere =
     let center = Vector.make 0. (-100.5) (-1.) in
     new Sphere.sphere center 100. in
-  [main_sphere; ground_sphere]
+  [ground_sphere; main_sphere; back_sphere]
 
 let rec random_in_unit_sphere () =
   let v = Vector.random (-1.) 1. in
@@ -36,7 +39,7 @@ let rec random_in_unit_sphere () =
 
 let rec ray_color scene r depth =
   if depth = 0 then Vector.make 0. 0. 0. else
-  match Raytrace.hit_list r 0.0 Float.infinity scene with
+  match Raytrace.hit_list r 0.0001 Float.infinity scene with
   | Some record ->
     let hit = Hit_record.hit record in
     let target =
@@ -75,16 +78,12 @@ let draw_scene pool pixels ?(aa=true) () =
     let x = p mod kWindowWidth in
     let y = p / kWindowWidth in
     let color = sample_pixel scene cam samples x y in
-    pixels.(p) <- color;
+    pixels.(kWindowHeight - y - 1).(x) <- color;
   )
 
-let write_pixels =
-  Array.iteri (fun p color ->
-    let x = p mod kWindowWidth in
-    let y = p / kWindowWidth in
-    Graphics.set_color color;
-    Graphics.plot x y
-  )
+let write_pixels pixels =
+  let img = Graphics.make_image pixels in
+  Graphics.draw_image img 0 0
 
 let () =
   let graph_spec = Printf.sprintf " %dx%d" kWindowWidth kWindowHeight in
@@ -94,7 +93,7 @@ let () =
   Graphics.draw_string "Loading...";
   let pool = T.setup_pool ~num_domains:4 () in
   (* Graphics.auto_synchronize false; *)
-  let pixels = Array.make (kWindowHeight * kWindowWidth) 0 in
+  let pixels = Array.make_matrix kWindowHeight kWindowWidth Graphics.background in
   T.run pool (draw_scene pool pixels);
   T.teardown_pool pool;
   write_pixels pixels;
