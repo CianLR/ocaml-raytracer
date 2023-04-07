@@ -12,7 +12,7 @@ dune build
 ## Running
 To run the example run
 ```
-./_build/default/src/main.exe
+dune exec src/main.exe
 ```
 
 ## TODO
