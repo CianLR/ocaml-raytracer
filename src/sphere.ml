@@ -1,14 +1,15 @@
 open Vector
 open Ray
 
-class sphere' center radius = object (self)
+class sphere' center radius material_type = object (self)
   val cen = center
   val rad = radius
+  val material = material_type
 
   method private get_record r t =
     let intersect = at r t in
     let normal = (intersect -: cen) /: rad in
-    Hit_record.make r t intersect normal
+    Hit_record.make r t intersect normal material
 
   method hit r t_min t_max =
     let oc = (origin r) -: cen in

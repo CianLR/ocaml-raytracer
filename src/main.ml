@@ -18,17 +18,6 @@ let vec_to_rgb v =
     (int_of_float (255. *. (Float.sqrt (y v))))
     (int_of_float (255. *. (Float.sqrt (z v))))
 
-let get_scene_objects () =
-  let main_sphere =
-    let center = Vector.make (-0.6) 0. (-1.2) in
-    new Sphere.sphere center 0.5 in
-  let back_sphere =
-    let center = Vector.make 2. 0. (-3.0) in
-    new Sphere.sphere center 0.5 in
-  let ground_sphere =
-    let center = Vector.make 0. (-100.5) (-1.) in
-    new Sphere.sphere center 100. in
-  [ground_sphere; main_sphere; back_sphere]
 
 let rec random_in_unit_sphere () =
   let v = Vector.random (-1.) 1. in
@@ -41,12 +30,8 @@ let rec ray_color scene r depth =
   if depth = 0 then Vector.make 0. 0. 0. else
   match Raytrace.hit_list r 0.0001 Float.infinity scene with
   | Some record ->
-    let hit = Hit_record.hit record in
-    let target =
-      hit +:
-      Hit_record.normal record +:
-      random_in_unit_sphere () in
-    let ray = Ray.make hit (target -: hit) in
+    let material = Hit_record.material record in
+    let ray = material#scatter r (Hit_record.hit record) (Hit_record.normal record) in
     (ray_color scene ray (depth - 1)) *: 0.5
   | None ->
     let unit_direction = unit_vector (direction r) in
@@ -72,7 +57,7 @@ let sample_pixel scene cam samples x y =
 let draw_scene pool pixels ?(aa=true) () =
   let samples = if aa then kSamplesPerPixel else 1 in
   let cam = Camera.make kWindowHeight kWindowWidth in
-  let scene = get_scene_objects () in
+  let scene = Example_scene.get_scene_objects () in
   let pixel_count = (kWindowHeight * kWindowWidth) in
   T.parallel_for pool ~start:0 ~finish:(pixel_count - 1) ~body:(fun p ->
     let x = p mod kWindowWidth in
